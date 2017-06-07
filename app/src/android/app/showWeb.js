@@ -5,7 +5,7 @@ import {
     WebView
 } from 'react-native';
 
-class PlayTrack extends Component {
+class ShowWeb extends Component {
     constructor(props) {
         super(props);
 		
@@ -31,4 +31,4 @@ class PlayTrack extends Component {
     }
 }
 
-export default PlayTrack;
+export default ShowWeb;

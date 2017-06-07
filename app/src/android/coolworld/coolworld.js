@@ -95,11 +95,11 @@ class Coolworld extends Component {
 						</Text>
 						
 						<Text style={styles.itemText}>
-							Тел.: +38093xxxxxxx
+							Тел.: +38-067-230-86-15
 						</Text>				
 						
 						<Text style={styles.itemText}>
-							E-mail: coolworld@coolworld.com
+							E-mail: olegsherbak@ukr.net
 						</Text>						
 						
 						<Text style={styles.itemText}>

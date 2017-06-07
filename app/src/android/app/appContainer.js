@@ -5,7 +5,7 @@ import NavigationExperimental from 'react-native-deprecated-custom-components';
 import ScrollableTabView, {DefaultTabBar} from 'react-native-scrollable-tab-view';
 
 import Coolworld from '../coolworld/coolworld';
-import PlayTrack from './playTrack';
+import ShowWeb from './showWeb';
 
 import Audit from '../audit/audit';
 import AuditDetails from '../audit/auditDetails';
@@ -40,7 +40,7 @@ class CoolworldTab extends Component {
 		switch (route.index) {		
 			case 0: return <Coolworld routes={this.routes} navigator={navigator} />
 					break;			
-			case 2: return <PlayTrack data={route.data} routes={this.routes} navigator={navigator} />
+			case 2: return <ShowWeb data={route.data} routes={this.routes} navigator={navigator} />
 					break;
  		}
  	}	
