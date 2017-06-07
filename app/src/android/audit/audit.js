@@ -6,50 +6,34 @@ import {
     Text,
     View,
     TouchableHighlight,
-	TouchableWithoutFeedback,
+    TouchableWithoutFeedback,
     ListView,
     ScrollView,
     ActivityIndicator,
     TextInput,
-	BackAndroid,
 	Image,
 	Dimensions,
-	RefreshControl	
+	RefreshControl
 } from 'react-native';
 
-class SearchTrack extends Component {
+class Audit extends Component {
     constructor(props) {
         super(props);
-		
-		BackAndroid.addEventListener('hardwareBackPress', () => {
-			if (this.props.navigator) {
-				this.props.navigator.pop();
-			}
-			return true;
-		});	
-		
-        var ds = new ListView.DataSource({
-            rowHasChanged: (r1, r2) => r1 != r2
+
+        let ds = new ListView.DataSource({
+            rowHasChanged: (r1, r2) => r1 !== r2
         });
 
-		this.state = {
-			dataSource: ds.cloneWithRows([]),
-			searchQuery: ''
-		}	
-		
-		if (props.data) {
-			this.state = {			
-				dataSource: ds.cloneWithRows([]),
-				searchQueryHttp: props.data.searchQuery,
-				showProgress: true,
-				resultsCount: 0,
-				recordsCount: 15,
-				positionY: 0,
-				searchQuery: '',
-				refreshing: false
-			}
+        this.state = {
+            dataSource: ds.cloneWithRows([]),
+            showProgress: true,
+            serverError: false,
+            resultsCount: 0,
+            recordsCount: 15,
+            positionY: 0,
+			searchQuery: '',
+			refreshing: false
         };
- 
     }
 
     componentDidMount() {
@@ -58,7 +42,7 @@ class SearchTrack extends Component {
         });
         this.getItems();
     }
-	
+
     getItems() {
 		this.setState({
 			serverError: false,
@@ -68,95 +52,53 @@ class SearchTrack extends Component {
 			searchQuery: ''
         });
 		
-        fetch('https://api.spotify.com/v1/search?q=' 
-			+ this.state.searchQueryHttp +
-			'&type=track&market=US&limit=50', {
+        fetch(appConfig.url + 'api/audit/get', {
             method: 'get',
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': appConfig.access_token
             }
         })
-            .then((response)=> response.json())
-            .then((responseData)=> {
-				let items = responseData.tracks.items;
-				
+            .then((response) => response.json())
+            .then((responseData) => {
+
                 this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(items.sort(this.sort).slice(0, 15)),
-                    resultsCount: items.length,
-                    responseData: items,
-                    filteredItems: items
+                    dataSource: this.state.dataSource.cloneWithRows(responseData.slice(0, 15)),
+                    resultsCount: responseData.length,
+                    responseData: responseData,
+                    filteredItems: responseData
                 });
             })
-            .catch((error)=> {
+            .catch((error) => {
                 this.setState({
                     serverError: true
                 });
             })
-            .finally(()=> {
+            .finally(() => {
                 this.setState({
                     showProgress: false
                 });
             });
     }
-	
-    pressRow(rowData) {
-		let data = {
-			name: rowData.name,
-			image: rowData.album.images[1].url,
-			artist: rowData.artists[0].name,
-			album: rowData.album.name,
-			duration: (+(rowData.duration_ms)/1000/60).toFixed(2) + ' secs',
-			url: rowData.preview_url
-		};
-		
-		this.props.navigator.push({
-			index: 2,
-			data: data
-		});
-    }
-	
-    renderRow(rowData) {
-		var image;
 
-        if (rowData.album.images[1]) {
-            image = <Image
-				source={{uri: rowData.album.images[1].url}}
-				style={styles.img}
-			/>
-        } else {
-			image = <Image
-				source={require('../../../img/no_image.jpg')}
-				style={styles.img}
-			/>
-		}
-		
+    showDetails(rowData) {
+        this.props.navigator.push({
+            index: 1,
+            data: rowData
+        });
+    }
+
+    renderRow(rowData) {
         return (
             <TouchableHighlight
-                onPress={()=> this.pressRow(rowData)}
+                onPress={() => this.showDetails(rowData)}
                 underlayColor='#ddd'
             >
-                <View style={styles.imgsList}>
- 
-					{image}
- 
-                    <View style={styles.textBlock}>
-                        <Text style={styles.textItemBold}>
-							{rowData.name}
-						</Text>                        
-						
-						<Text style={styles.textItem}>
-							{rowData.artists[0].name}
-						</Text>
-						
-						<Text style={styles.textItem}>
-							{rowData.album.name}
-						</Text>
-												
-						<Text style={styles.textItem}>
-							{(+(rowData.duration_ms)/1000/60).toFixed(2)  + ' secs'}
-						</Text>	
-                    </View>
+                <View style={styles.row}>
+                    <Text style={styles.rowText}>
+                        {rowData.name} - {rowData.date}
+                    </Text>
                 </View>
             </TouchableHighlight>
         );
@@ -176,21 +118,22 @@ class SearchTrack extends Component {
         positionY = this.state.positionY;
         items = this.state.filteredItems.slice(0, recordsCount);
 
-        if (event.nativeEvent.contentOffset.y >= positionY) {
+        if (event.nativeEvent.contentOffset.y >= positionY - 10) {
             this.setState({
                 dataSource: this.state.dataSource.cloneWithRows(items),
                 recordsCount: recordsCount + 10,
-                positionY: positionY + 400
+                positionY: positionY + 500
             });
         }
     }
 
     onChangeText(text) {
-        if (this.state.responseData == undefined) {
+        if (this.state.dataSource === undefined) {
             return;
         }
-        var arr = [].concat(this.state.responseData);
-        var items = arr.filter((el) => el.name.toLowerCase().indexOf(text.toLowerCase()) >= 0);
+
+        let arr = [].concat(this.state.responseData);
+        let items = arr.filter((el) => el.name.toLowerCase().indexOf(text.toLowerCase()) !== -1);
         this.setState({
             dataSource: this.state.dataSource.cloneWithRows(items),
             resultsCount: items.length,
@@ -207,10 +150,10 @@ class SearchTrack extends Component {
 
         this.getItems();
     }
-	
-    goBack(rowData) {
-		this.props.navigator.pop();
-	}
+
+    goBack() {
+        this.props.navigator.pop();
+    }
 
     clearSearchQuery() {
         this.setState({
@@ -222,7 +165,7 @@ class SearchTrack extends Component {
             searchQuery: ''
         });
     }
-	
+
     render() {
         let errorCtrl, loader, image;
 
@@ -254,28 +197,34 @@ class SearchTrack extends Component {
 
         return (
             <View style={styles.container}>
-				<View style={styles.header}>
-					<View>
-						<TouchableHighlight
-							onPress={()=> this.goBack()}
-							underlayColor='#48BBEC'
-						>
-							<Text style={styles.textSmall}>
-								Back
-							</Text>
-						</TouchableHighlight>	
-					</View>
-					<View style={styles.itemWrap}>
-						<Text style={styles.textLarge}>
-							{this.state.searchQueryHttp}
-						</Text>
-					</View>						
-					<View>
-						<Text style={styles.textSmall}>
-						</Text>
-					</View>
-				</View>
-				
+                <View style={styles.header}>
+                    <View>
+                        <TouchableWithoutFeedback>
+                            <View>
+                                <Text style={styles.textSmall}>
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                    <View>
+                        <TouchableWithoutFeedback>
+                            <View>
+                                <Text style={styles.textLarge}>
+                                    Audit
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                    <View>
+                        <TouchableWithoutFeedback>
+                            <View>
+                                <Text style={styles.textSmall}>
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </View>
+
                 <View style={styles.iconForm}>
 					<View>
 						<TextInput
@@ -312,8 +261,8 @@ class SearchTrack extends Component {
 						</TouchableWithoutFeedback>
 					</View>
                 </View>
-				
-				{errorCtrl}
+
+                {errorCtrl}
 
                 {loader}
 
@@ -333,122 +282,84 @@ class SearchTrack extends Component {
 					/>
 				</ScrollView>
 
-				<View>
-					<Text style={styles.countFooter}>
-						Records: {this.state.resultsCount} 
-					</Text>
-				</View>
+                <View>
+                    <Text style={styles.countFooter}>
+                        Records: {this.state.resultsCount.toString()}
+                    </Text>
+                </View>
             </View>
         )
     }
 }
 
 const styles = StyleSheet.create({
-    imgsList: {
+    container: {
         flex: 1,
-        flexDirection: 'row',
-        padding: 0,
-        alignItems: 'center',
-        borderColor: '#D7D7D7',
-        borderBottomWidth: 1,
-        backgroundColor: '#fff'
+        justifyContent: 'center',
+        backgroundColor: 'white'
     },
 	iconForm: {
 		flexDirection: 'row',
 		borderColor: 'lightgray',
 		borderWidth: 3
 	},
-    countHeader: {
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor: '#48BBEC',
+        borderWidth: 0,
+        borderColor: 'whitesmoke'
+    },
+    textSmall: {
         fontSize: 16,
         textAlign: 'center',
-        padding: 15,
-        backgroundColor: '#F5FCFF',
+        margin: 14,
+        fontWeight: 'bold',
+        color: 'white'
     },
-    img: {
-        height: 95,
-        width: 90,
-        borderRadius: 10,
-        margin: 10
-    },    
-	textBlock: {
-		flex: 1,
-		flexDirection: 'column',
-		justifyContent: 'space-between'
-    },	
-	textItemBold: {
-		fontWeight: 'bold', 
-		color: 'black'
-    },	
-	textItem: {
-		color: 'black'
+    textLarge: {
+        fontSize: 20,
+        textAlign: 'center',
+        margin: 10,
+        marginRight: 20,
+        fontWeight: 'bold',
+        color: 'white'
     },
-	container: {
-		flex: 1, 
-		justifyContent: 'center', 
-		backgroundColor: 'white'
-	},		
-	header: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		backgroundColor: '#48BBEC',
-		borderWidth: 0,
-		borderColor: 'whitesmoke'
-	},	
-	textSmall: {
-		fontSize: 16,
-		textAlign: 'center',
-		margin: 14,
-		fontWeight: 'bold',
-		color: 'white'
-	},		
-	textLarge: {
-		fontSize: 20,
-		textAlign: 'center',
-		margin: 10,
-		marginRight: 60,
-		fontWeight: 'bold',
-		color: 'white'
-	},		
-	textInput: {
-		height: 45,
-		marginTop: 0,
-		padding: 5,
-		backgroundColor: 'white',
-		borderWidth: 3,
-		borderColor: 'lightgray',
-		borderRadius: 0
-	},
-	itemWrap: {
-		flex: 1,
-		flexDirection: 'column', 
-		flexWrap: 'wrap'
-    },	
-	row: {
-		flex: 1,
-		flexDirection: 'row',
-		padding: 20,
-		alignItems: 'center',
-		borderColor: '#D7D7D7',
-		borderBottomWidth: 1,
-		backgroundColor: '#fff'
-	},		
-	rowText: {
-		backgroundColor: '#fff', 
-		color: 'black', 
-		fontWeight: 'bold'
-	},	
+    textInput: {
+        height: 45,
+        marginTop: 0,
+        padding: 5,
+        backgroundColor: 'white',
+        borderWidth: 3,
+        borderColor: 'lightgray',
+        borderRadius: 0
+    },
+    row: {
+        flex: 1,
+        flexDirection: 'row',
+        padding: 20,
+        alignItems: 'center',
+        borderColor: '#D7D7D7',
+        borderBottomWidth: 1,
+        backgroundColor: '#fff'
+    },
+    rowText: {
+        backgroundColor: '#fff',
+        color: 'black',
+        fontWeight: 'bold'
+    },
     countFooter: {
         fontSize: 16,
         textAlign: 'center',
         padding: 10,
         borderColor: '#D7D7D7',
         backgroundColor: '#48BBEC',
-		color: 'white',
-		fontWeight: 'bold'
+        color: 'white',
+        fontWeight: 'bold'
     },
     loader: {
-		justifyContent: 'center',
-		height: 100
+        justifyContent: 'center',
+        height: 100
     },
     error: {
         color: 'red',
@@ -457,4 +368,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default SearchTrack;
+export default Audit;

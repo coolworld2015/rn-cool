@@ -15,7 +15,7 @@ import {
 	BackAndroid
 } from 'react-native';
 
-class MoviesDetails extends Component {
+class Coolworld extends Component {
     constructor(props) {
         super(props);
 		
@@ -25,71 +25,8 @@ class MoviesDetails extends Component {
 			}
 			return true;
 		});	
-		
-		this.state = {
-			name: '',
-			artist: '',
-			album: '',
-			duration: '',
-			url: 'https://play.google.com/store/apps/details?id=io.cordova.ui_warehouse'
-		};
-		
-		if (props.data) {
-			this.state = {
-				trackId: props.data.trackId,
-				name: props.data.name,
-				image: props.data.image,
-				artist: props.data.artist,
-				album: props.data.album,
-				duration: props.data.duration,
-				url: props.data.url
-			};
-		}	
     }
-	
-    deleteMovieDialog() {
-		Alert.alert(
-			'Delete track',
-			'Are you sure you want to delete track ' + this.state.name + '?',
-			[
-				{text: 'Cancel', onPress: () => console.log('Cancel Pressed!')},
-				{
-					text: 'OK', onPress: () => {
-					this.deleteMovie();
-					}
-				},
-			]
-		);	
-	}
-	
-	deleteMovie(id) {
-		var id = this.state.trackId;
-		var movies = [];
 
-		AsyncStorage.getItem('rn-movies.movies')
-			.then(req => JSON.parse(req))
-			.then(json => {
-
-				movies = [].concat(json);
-
-				for (var i = 0; i < movies.length; i++) {
-					if (movies[i].trackId == id) {
-						movies.splice(i, 1);
-						break;
-					}
-				}
-
-				AsyncStorage.setItem('rn-movies.movies', JSON.stringify(movies))
-					.then(json => {
-							appConfig.movies.refresh = true;
-							this.props.navigator.pop();
-						}
-					);
-
-			})
-			.catch(error => console.log(error))
-	}
-	
     goGoogle() {
 		this.props.navigator.push({
 			index: 2,
@@ -113,32 +50,15 @@ class MoviesDetails extends Component {
 	}
 	
     render() {
-        var image = <View />;
- 
-		image = <Image
+		var image = <Image
 			source={require('../../../img/react.gif')}
-			style={{
-				height: 150,
-				width: 200,
-				borderRadius: 10,
-				margin: 5
-			}}
+			style={styles.pic}
 		/>;
 		
         return (
             <View style={styles.container}>
-
-				
 				<ScrollView>
-					<View style={{
-							flex: 1,
-							padding: 10,
-							paddingBottom: 55,
-							justifyContent: 'flex-start',
-							backgroundColor: 'black'
-					}}>
-
-					 
+					<View style={styles.containerView}>
 						<Text style={styles.itemTextBold}>
 							Coolworld
 						</Text>
@@ -185,7 +105,6 @@ class MoviesDetails extends Component {
 						<Text style={styles.itemText}>
 							Будем рады сотрудничать!
 						</Text>
-						
 					</View>
 				</ScrollView>
 			</View>
@@ -198,6 +117,19 @@ const styles = StyleSheet.create({
 		flex: 1, 
 		justifyContent: 'center', 
 		backgroundColor: 'white'
+	},		
+	pic: {
+		height: 150,
+		width: 200,
+		borderRadius: 10,
+		margin: 5
+	},	
+	containerView: {
+		flex: 1,
+		padding: 10,
+		paddingBottom: 55,
+		justifyContent: 'flex-start',
+		backgroundColor: 'black'
 	},		
 	header: {
 		flexDirection: 'row',
@@ -279,4 +211,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default MoviesDetails;
+export default Coolworld;
